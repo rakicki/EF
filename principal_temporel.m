@@ -1,0 +1,114 @@
+% =====================================================
+% principal_temporel;
+%
+% une routine pour la mise en oeuvre des EF P1 Lagrange
+% pour :
+%
+% 1) l'equation suivante des ondes en regime temporel, avec conditions de
+% Dirichlet homogene
+% | d^2_{tt} u - div(\sigma \grad u)= f,   dans \Omega=\Omega_1 U \Omega_2
+% |         u = 0,   sur le bord
+%
+% avec
+% \sigma = | \sigma_1 dans \Omega_1
+%          | \sigma_2 dans \Omega_2
+%
+% =====================================================
+
+%% Reading mesh file and assembling matrices.
+
+meshFilePath ='geomRect_0.05.msh'; % A COMPLETER
+massType = 'Exacte'; % 'Cond'; %  
+
+[Nbpt, Nbtri, Coorneu, Refneu, Numtri, Reftri]=lecture_msh(meshFilePath);
+
+%Assemblage des matrices M et K 
+[M, K] = assembleMCondK(Coorneu, Refneu, Numtri, Reftri);
+
+
+%% Computing CLF condition and effective time step.
+
+% Calcul de la CFL
+% A COMPLETER
+ cfl = 2/sqrt(max(abs(eigs(M\K))));
+% Calcul du pas de temps.
+cfl_factor = 0.95;
+dt = cfl_factor* cfl;
+
+
+%% Computing initial conditions.
+
+interpU0 = zeros(Nbpt, 1);
+interpU1 = zeros(Nbpt, 1);
+
+for i = 1:Nbpt
+    % A COMPLETER
+    x= Coorneu(i, 1);
+    y=Coorneu(i, 2);
+    interpU0(i)=exp(-50*((x-3)^2 + (y-1)^2));
+    
+end
+
+
+%% Propagating.
+
+Tmax = 3;
+niter = floor(Tmax / dt) + 1;
+[Us, Kinetic, Potential, Times] = propage_implicite(M, K, interpU0, interpU1, dt, niter); % A COMPLETER
+
+
+
+%% Plots of energy and solution.
+ouinon=["oui","non"];
+plot_energy = ouinon(2);
+plot_interp = ouinon(2);
+plot_sol = ouinon(1);
+if (strcmp(plot_energy,"non"))
+    figure
+    hold on;
+    plot(Times, Potential)
+    plot(Times, Kinetic)
+    plot(Times, Kinetic + Potential)
+    xlim([min(Times) max(Times)])
+    xlabel('Time')
+    ylabel('Energy')
+    legend('P', 'K', 'E', 'Location', 'SouthEast')
+    
+    %solution a l instant final
+    affiche(Us(:, end), Numtri, Coorneu);
+    %coefficient sigma
+    afficheSigma(Numtri, Reftri, Coorneu);
+end
+
+%% Interpolation at point.
+if (strcmp(plot_interp,"non"))
+    CoordsInterpPnts = [2, 1; 4, 1];
+    NbInterpPnts = size(CoordsInterpPnts, 1);
+
+    % Calcul de la matrice des co?fficients d'interpolation.
+    interpolationOp = interpTriP1(Coorneu, Numtri, CoordsInterpPnts);
+    SOp1=interpolationOp(1,:)*Us(:,1:niter);
+    SOp2=interpolationOp(2,:)*Us(:,1:niter);
+    plot(Times,SOp1,'g');
+    hold on;
+    plot(Times,SOp2,'-.b');
+    hold off;
+    xlabel('Time');
+    ylabel('Solution interpolée');
+        % A COMPLETER
+end
+affiche(Us(:,niter), Numtri, Coorneu);
+
+if (strcmp(plot_sol,"non"))
+for Nt=1:niter
+    affiche(Us(:, Nt), Numtri, Coorneu);
+    pause(1);
+    close all;
+end
+
+end
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                       fin de la routine
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%2024
+

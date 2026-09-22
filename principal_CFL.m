@@ -1,0 +1,51 @@
+% =====================================================
+% principal_CFL;
+%
+% une routine permettant d'évaluer la dépendance de la condition CFL
+% en fonction du pas de maillage
+%
+% =====================================================
+
+%% Definition of mesh files and associated mesh steps.
+
+meshFilePath = ["geomRect.msh","geomRect_0.05.msh","geomRect_h_0.08.msh","geomRect_h_0.13.msh","geomRect_h_0.17.msh","geomRect_0.2.msh"];
+
+steps = [0.02,0.05,0.08,0.13,0.17,0.2];
+
+
+%% Computing CFL for every meshes.
+
+nbMesh = length(steps);
+if nbMesh ~= length(meshFilePath)
+    error('Number of mesh files and number of steps differ.');
+end
+
+% Allocation.
+cfl = zeros(nbMesh, 1);
+cflmax = zeros(nbMesh, 1);
+% Boucle sur les maillages.
+for i=1:nbMesh
+    
+    [Nbpt, Nbtri, Coorneu, Refneu, Numtri, Reftri] = lecture_msh(meshFilePath(i));
+    
+    % Assemblage de M et K et calcul de la CFL.
+    [M, K] = assembleMCondK(Coorneu, Refneu, Numtri, Reftri);
+    cfl(i) = 2/sqrt(max(abs(eigs(M\K))));
+    
+    % A COMPLETER
+end
+
+
+%% Affichage de la cfl en fonction de h.
+plot(steps, cfl, 'r', 'LineWidth', 2);
+xlabel('h');
+ylabel('CFL');
+title('CFL en fonction du pas h');
+% A COMPLETER
+
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                        fin de la routine
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%2024
+
+

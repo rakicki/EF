@@ -1,0 +1,96 @@
+function [MCond, KK] = assembleMCondK(Coorneu, Refneu, Numtri, Reftri)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% assembleMCondK :
+% assemble les matrices de masse condensée et de raideur globales en P1 lagrange.
+%
+% SYNOPSIS [MCond, K] = assembleMCondK(Coorneu, Numtri, Reftri)
+%          
+% INPUT  * Coorneu : coordonnees (x, y) des sommets (matrice reelle Nbpt x 2)
+%        * Refneu : reference des sommets (vecteur entier Nbpt x 1)
+%        * Numtri : liste de triangles 
+%                   (3 numeros de sommets - matrice entiere Nbtri x 3)
+%        * Reftri : reference des triangles (matrice entiere Nbtri x 1)
+%
+% OUTPUT * M matrice de masse globale (vecteur Nbpt)
+%        * K matrice de raideur globale (matrice NbptxNbpt)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Nbpt = size(Coorneu, 1);
+Nbtri = size(Numtri, 1);
+
+% Declarations des matrices EF.
+KK = sparse(Nbpt,Nbpt);
+MCondDiag = zeros(Nbpt, 1);
+
+% Boucle d'assemblage sur les triangles.
+for l=1:Nbtri
+    
+    S1 = Coorneu(Numtri(l,1), :);
+    S2 = Coorneu(Numtri(l,2), :);
+    S3 = Coorneu(Numtri(l,3), :);
+    x1 = S1(1); y1 = S1(2);
+    x2 = S2(1); y2 = S2(2);
+    x3 = S3(1); y3 = S3(2);
+
+% calcul de la matrice de masse.
+
+% D est, au signe pres, deux fois l'aire du triangle
+    D = ((x2-x1)*(y3-y1) - (y2-y1)*(x3-x1));
+    if (abs(D) <= eps) 
+        error('l aire d un triangle est nulle!!!'); 
+    end
+    % Assemblage de la matrice de rigidité.
+    % A COMPLETER
+    Kel=matK_elem(S1, S2, S3,Reftri(l));
+    
+    Melm=(abs(D)/6)*eye(3);
+    
+    for i=1:3
+      I=Numtri(l,i);
+      MCondDiag(I)=MCondDiag(I)+Melm(i,i);
+      for j=1:3
+        J=Numtri(l,j);
+        KK(I,J)=KK(I,J)+Kel(i,j);
+        
+      end
+    end
+    % Assemblage de la diagonale de la matrice de masse.
+    % A COMPLETER
+    
+end % for l
+
+% Transformation de la diagonale en une matrice sparse.
+MCond = spdiags(MCondDiag, 0, Nbpt, Nbpt);
+
+% Pseudo élimination.
+
+% Nombre de sommets dans la discretisation.
+
+
+%A COMPLETER
+for l=1:Nbpt
+    if Refneu(l)==1  || Refneu(l) ==2  %Condition Dirichlet sur Gamma_D seulement si || Refneu(l) ==2 commenté pour geomRect_modified.msh ; sinon dirichlet sur tout le bord
+        MCond(l,l)=1;
+        for i=1:Nbpt
+            if i~=l 
+            KK(i,l)=0;
+            KK(l,i)=0;
+            end
+            if i==l
+                KK(i,l)=1;
+
+            end
+        end
+    end
+
+end
+% A COMPLETER
+end
+
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                        fin de la routine
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%2024
+
